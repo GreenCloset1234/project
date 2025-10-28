@@ -42,9 +42,9 @@ CREATE TABLE `Chat_Messages` (
   CONSTRAINT `Chat_Messages_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `Chat_rooms` (`room_id`),
   CONSTRAINT `Chat_Messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
--- ENGINE=InnoDB DEFAULT : 
--- CHARSET=utf8mb4 : 
--- COLLATE=utf8mb4_0900_ai_ci : 
+-- ENGINE=InnoDB DEFAULT : 테이블 작동 방식(엔진)을 InnoDB로 설정.
+-- CHARSET=utf8mb4 : 문자 저장 방식을 utf8mb4로 설정. (utf8는 3byte, utf8mb4는 4byte여서 utf8mb4로는 이모지를 포함한 전 세계 모든 문자 표현 가능.)
+-- COLLATE=utf8mb4_0900_ai_ci : 문자 정렬 규칙 설정. utf8mb4_0900_ai_ci는 유니코드 9.0버전을 기반으로 ai(악센트(억양부호))와 ci(대소문자)를 무시함.
 
 /*!40101 SET character_set_client = @saved_cs_client */;
 
