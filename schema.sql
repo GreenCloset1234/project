@@ -42,6 +42,10 @@ CREATE TABLE `Chat_Messages` (
   CONSTRAINT `Chat_Messages_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `Chat_rooms` (`room_id`),
   CONSTRAINT `Chat_Messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- ENGINE=InnoDB DEFAULT : 
+-- CHARSET=utf8mb4 : 
+-- COLLATE=utf8mb4_0900_ai_ci : 
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
