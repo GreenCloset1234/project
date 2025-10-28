@@ -35,3 +35,16 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Gradle
+.gradle/
+build/
+
+# IDE files (IntelliJ, VSCode 등)
+.idea/
+.vscode/
+*.iml
+
+# 기타
+out/
+*.log
