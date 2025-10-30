@@ -1,17 +1,17 @@
 package com.example.GreenCloset.domain;
 
-import jakarta.persistence.*;   //JPA 어노테이션 쓸라고
-import jakarta.validation.constraints.Size; // 유효한지 안한지
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;   //lombok: getter 메서드 자동생성
-import lombok.NoArgsConstructor;    //lombok 기본 생성자 자동생성
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
-@Entity     //이 클래스는 JPA가 관리하는 엔티티
-@Table(name = "Users")  //매핑할 테이블명 암시
-@Getter     //lombok    getter 자동 생성
-@NoArgsConstructor(access = AccessLevel.PROTECTED)      //JPA가 객체를 만들떄 기본 생성자 필요
+@Entity
+@Table(name = "Users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
     @Id
@@ -19,17 +19,15 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "email", unique = true, length = 255)
+    @Column(name = "email", unique = true, nullable = false, length = 255) // ERD: UNIQUE, NOT NULL
     private String email;
 
     @Column(name = "password", length = 255)
     private String password;
 
-    // --- 닉네임 수정 ---
-    @Column(name = "nickname", nullable = false, unique = true, length = 50) //  unique 추가
-    @Size(min = 2, max = 10, message = "닉네임은 2~10자 사이로 입력해주세요.") // 글자 수 제한
+    @Column(name = "nickname", nullable = false, unique = true, length = 50) // ERD: NOT NULL, UNIQUE
+    @Size(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하로 입력해주세요.") // Validation
     private String nickname;
-
 
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
@@ -48,19 +46,14 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
+    // (이하 수정 메소드들...)
     public void updateUser(String newNickname, String newIntroduction) {
-        if (newNickname != null) {
-            this.nickname = newNickname;
-        }
-        if (newIntroduction != null) {
-            this.introduction = newIntroduction;
-        }
+        if (newNickname != null) this.nickname = newNickname;
+        if (newIntroduction != null) this.introduction = newIntroduction;
     }
-
     public void updateProfileImage(String newProfileImageUrl) {
         this.profileImageUrl = newProfileImageUrl;
     }
-
     public void updatePassword(String newHashedPassword) {
         this.password = newHashedPassword;
     }
