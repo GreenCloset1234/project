@@ -3,7 +3,7 @@ package com.example.GreenCloset.domain;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder; // [수정] @Builder 추가
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,9 +11,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Builder // [수정] Builder 오류 해결
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // [수정] JPA를 위한 기본 생성자
-@AllArgsConstructor // [수정] @Builder를 위한 모든 필드 생성자
+@Builder // [추가] TradeService의 .builder()를 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
+@AllArgsConstructor // [추가] @Builder를 위해
 public class Trade {
 
     @Id
@@ -30,5 +30,6 @@ public class Trade {
 
     private Long total; // (거래 금액)
 
-    private LocalDateTime completedAt; // (거래 완료 시간)
+    // (이 필드는 TradeService에서 .now()로 직접 설정하므로 BaseEntity 미사용)
+    private LocalDateTime completedAt;
 }

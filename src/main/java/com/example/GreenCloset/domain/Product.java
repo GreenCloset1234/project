@@ -2,56 +2,35 @@ package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Products")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Product {
+@Builder // [추가] ProductService의 .builder()를 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
+@AllArgsConstructor // [추가] @Builder를 위해
+public class Product extends BaseEntity { // [수정] createdAt, updatedAt 상속
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "product_id")
     private Long productId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(name = "title", nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
-    @Column(name = "content", columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String content;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "product_image_url", length = 500)
     private String productImageUrl;
 
-    @Builder
-    public Product(User user, String title, String content, String productImageUrl) {
-        this.user = user;
-        this.title = title;
-        this.content = content;
-        this.productImageUrl = productImageUrl;
-    }
+    // (TODO: Enum 타입의 ProductStatus(상품 상태) 필드 추가 권장)
+    // @Enumerated(EnumType.STRING)
+    // private ProductStatus status;
 
-    public void updateProduct(String title, String content, String productImageUrl) {
-        this.title = title;
-        this.content = content;
-        this.productImageUrl = productImageUrl;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // (판매자)
+    private User user;
 }

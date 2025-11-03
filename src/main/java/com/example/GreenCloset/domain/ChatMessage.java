@@ -2,21 +2,22 @@ package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Chat_Messages")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder // [추가] ChatMessageService의 .builder()를 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
+@AllArgsConstructor // [추가] @Builder를 위해
 public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "message_id")
     private Long messageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,20 +25,12 @@ public class ChatMessage {
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id")
     private User sender;
 
-    @Column(name = "content", columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String content;
 
-    @CreationTimestamp
-    @Column(name = "sent_at", nullable = false, updatable = false)
+    // (이 필드는 ChatMessageService에서 .now()로 직접 설정하므로 BaseEntity 미사용)
     private LocalDateTime sentAt;
-
-    @Builder
-    public ChatMessage(ChatRoom chatRoom, User sender, String content) {
-        this.chatRoom = chatRoom;
-        this.sender = sender;
-        this.content = content;
-    }
 }

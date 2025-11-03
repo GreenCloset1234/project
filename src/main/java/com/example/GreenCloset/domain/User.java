@@ -1,60 +1,46 @@
 package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Users")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder // [추가] UserService의 signup 메서드에서 .builder()를 사용하기 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA는 기본 생성자가 필요
+@AllArgsConstructor // [추가] @Builder가 모든 필드 생성자를 사용하기 위해
+@Table(name = "users") // (DB 테이블명을 'users'로 명시)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "email", unique = true, nullable = false, length = 255) // ERD: UNIQUE, NOT NULL
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", length = 255)
+    @Column(nullable = false)
     private String password;
 
-    @Column(name = "nickname", nullable = false, unique = true, length = 50) // ERD: NOT NULL, UNIQUE
-    @Size(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하로 입력해주세요.") // Validation
+    @Column(nullable = false, unique = true)
     private String nickname;
 
-    @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
-    @Column(name = "introduction", columnDefinition = "TEXT")
     private String introduction;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    // (TODO: Enum 타입의 UserRole(권한) 필드 추가 권장)
+    // @Enumerated(EnumType.STRING)
+    // private UserRole role;
 
-    @Builder
-    public User(String email, String password, String nickname) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
-        this.createdAt = LocalDateTime.now();
-    }
-
-    // (이하 수정 메소드들...)
-    public void updateUser(String newNickname, String newIntroduction) {
-        if (newNickname != null) this.nickname = newNickname;
-        if (newIntroduction != null) this.introduction = newIntroduction;
-    }
-    public void updateProfileImage(String newProfileImageUrl) {
-        this.profileImageUrl = newProfileImageUrl;
-    }
-    public void updatePassword(String newHashedPassword) {
-        this.password = newHashedPassword;
+    /**
+     * [추가] UserService의 changePassword에서 호출하는 메서드
+     * (엔티티의 데이터를 변경할 때는 @Setter 대신 명확한 메서드 이름을 사용)
+     */
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
     }
 }

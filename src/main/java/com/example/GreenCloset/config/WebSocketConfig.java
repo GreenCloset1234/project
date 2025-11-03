@@ -7,27 +7,30 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
-@EnableWebSocketMessageBroker // STOMP 기반 WebSocket 활성화
+@EnableWebSocketMessageBroker // STOMP 기반 WebSocket 메시지 브로커를 활성화
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 1. WebSocket 연결 엔드포인트 설정
-        // 프론트엔드가 SockJS로 이 주소에 연결을 시도합니다.
-        registry.addEndpoint("/ws/chat")
-
-                .setAllowedOriginPatterns("http://localhost:5173")
-                .withSockJS(); // SockJS 지원
+        // 1. 클라이언트가 WebSocket 연결을 시작할 엔드포인트
+        // (API 명세서 6. WebSocket Endpoint: /ws)
+        registry.addEndpoint("/ws")
+                // (TODO: 추후 배포 시 실제 프론트엔드 URL로 변경해야 함)
+                .setAllowedOrigins("http://localhost:3000", "http://localhost:8080")
+                .withSockJS(); // (구형 브라우저 호환성을 위해 SockJS 사용)
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // 3. 메시지 브로커 설정
-
-        // "/sub"로 시작하는 주소를 구독(sub)하는 클라이언트에게 메시지 전달
+        // 2. 클라이언트가 구독(Subscribe)할 경로의 접두사
+        // (API 명세서 6.2. Subscribe: /sub/chats/{roomId})
         registry.enableSimpleBroker("/sub");
 
-        // "/pub"로 시작하는 주소로 발행(pub)된 메시지를 컨트롤러(@MessageMapping)로 라우팅
+        // 3. 클라이언트가 메시지를 발행(Publish)할 경로의 접두사
+        // (API 명세서 6.1. Publish: /pub/chats/{roomId})
         registry.setApplicationDestinationPrefixes("/pub");
     }
+
+    // (TODO: WebSocket 연결 시 JWT 인증을 처리하기 위해
+    //  StompHeaderAccessor를 가로채는 ChannelInterceptor를 여기에 추가 구현해야 함)
 }
