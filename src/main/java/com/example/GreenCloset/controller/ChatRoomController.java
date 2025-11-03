@@ -1,43 +1,47 @@
 package com.example.GreenCloset.controller;
 
-import com.example.GreenCloset.dto.ChatRequestDto;
-import com.example.GreenCloset.dto.ChatMessageResponseDto;
-import com.example.GreenCloset.service.ChatMessageService;
+import com.example.GreenCloset.domain.User;
+import com.example.GreenCloset.dto.ChatRoomCreateRequestDto; // [수정] ChatRequestDto -> ChatRoomCreateRequestDto
+import com.example.GreenCloset.dto.ChatRoomResponseDto;
 import com.example.GreenCloset.service.ChatRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.http.ResponseEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/chats") //채팅공통경로
+@RequestMapping("/api/v1/chats")
 public class ChatRoomController {
+
     private final ChatRoomService chatRoomService;
-    private final ChatMessageService chatMessageService;
-    //채팅방 생성/조회
+    // (ChatMessageService 삭제 - 이 컨트롤러의 역할이 아님)
 
+    /**
+     * 1. 채팅방 생성 또는 조회
+     */
     @PostMapping
-    public ResponseEntity<Long> getOrCreateChatRoom(@Valid @RequestBody ChatRequestDto requestDto) {
-        // (TODO: 임시 ID. 추후 Spring Security에서 실제 *구매자* ID를 가져와야 함)
-        Long currentBuyerId = 2L;
-
-        Long roomId = chatRoomService.createOrGetChatRoom(requestDto.getProductId(), currentBuyerId);
+    public ResponseEntity<Long> getOrCreateChatRoom(
+            @Valid @RequestBody ChatRoomCreateRequestDto requestDto, // [수정] ChatRoomCreateRequestDto 사용
+            @AuthenticationPrincipal User user // (구매자 정보)
+    ) {
+        // [수정] Long ID 대신 User 객체의 ID를 사용
+        Long roomId = chatRoomService.createOrGetChatRoom(requestDto.getProductId(), user.getUserId());
         return ResponseEntity.ok(roomId);
     }
 
     /**
-     * 내 채팅방 목록 조회 (GET /chats)
+     * 2. 내 채팅방 목록 조회
      */
     @GetMapping
-    public ResponseEntity<List<?>> getMyChatRooms() {
-        // (TODO: 임시 ID. 추후 Spring Security에서 실제 유저 ID를 가져와야 함)
-        Long currentUserId = 1L;
-
-        // (Service에서 DTO로 변환하는 로직을 권장합니다)
-        return ResponseEntity.ok(chatRoomService.getMyChatRooms(currentUserId));
+    public ResponseEntity<List<ChatRoomResponseDto>> getMyChatRooms(
+            @AuthenticationPrincipal User user // [수정] Long ID 대신 User 객체를 주입받음
+    ) {
+        // [수정] Long ID 대신 User 객체를 서비스로 전달
+        List<ChatRoomResponseDto> responseDtoList = chatRoomService.getMyChatRooms(user);
+        return ResponseEntity.ok(responseDtoList);
     }
 }

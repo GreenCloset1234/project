@@ -3,66 +3,67 @@ package com.example.GreenCloset.service;
 import com.example.GreenCloset.domain.Product;
 import com.example.GreenCloset.domain.Trade;
 import com.example.GreenCloset.domain.User;
+import com.example.GreenCloset.dto.TradeRequestDto;
+import com.example.GreenCloset.dto.TradeResponseDto;
+// [수정] CustomException import
+import com.example.GreenCloset.global.exception.CustomException;
+// [수정] ErrorCode import (이 줄이 꼭 필요합니다!)
+import com.example.GreenCloset.global.exception.ErrorCode;
 import com.example.GreenCloset.repository.ProductRepository;
 import com.example.GreenCloset.repository.TradeRepository;
-import com.example.GreenCloset.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class TradeService {
 
     private final TradeRepository tradeRepository;
     private final ProductRepository productRepository;
-    private final UserRepository userRepository;
 
-    /**
-     * 거래 완료 (POST /trades)
-     */
-    public void createTrade(Long productId, Long buyerId, Long totalAmount) {
+    @Transactional
+    public TradeResponseDto createTrade(TradeRequestDto requestDto, User buyer) {
+        Product product = productRepository.findById(requestDto.getProductId())
+                // [수정] import가 추가되어 이 부분이 정상 작동합니다.
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 1. 엔티티 조회
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+        // (TODO: 상품이 이미 판매되었는지 확인하는 로직 필요)
+        // if (product.getStatus() == ProductStatus.SOLD) { ... }
 
-        User buyer = userRepository.findById(buyerId)
-                .orElseThrow(() -> new IllegalArgumentException("구매자를 찾을 수 없습니다."));
-
-        // 2. (방어 로직) 본인 상품은 거래할 수 없음
-        if (product.getUser().getUserId().equals(buyerId)) {
-            throw new IllegalArgumentException("자신의 상품은 거래할 수 없습니다.");
+        if (product.getUser().getUserId().equals(buyer.getUserId())) {
+            // [수정] import가 추가되어 이 부분이 정상 작동합니다.
+            // (이 ErrorCode가 작동하려면 아래 ErrorCode.java 파일도 수정해야 합니다)
+            throw new CustomException(ErrorCode.CANNOT_TRADE_OWN_PRODUCT);
         }
 
-        // 3. (방어 로직) 이미 거래된 상품인지 확인 (ERD의 UNIQUE 제약조건 활용)
-        // (이 기능을 위해 TradeRepository 수정이 필요합니다 -> 아래 "다음 단계" 참고)
-        if (tradeRepository.existsByProduct(product)) {
-            throw new IllegalArgumentException("이미 거래가 완료된 상품입니다.");
-        }
-
-        // 4. 거래 생성 및 저장
-        Trade trade = Trade.builder()
+        Trade newTrade = Trade.builder()
                 .product(product)
                 .buyer(buyer)
-                .total(totalAmount) // ERD에 추가하신 total 필드
+                .total(requestDto.getTotal())
+                .completedAt(LocalDateTime.now())
                 .build();
 
-        tradeRepository.save(trade);
+        // (TODO: 상품 상태를 'SOLD'로 변경하는 로직)
+        // product.setStatus(ProductStatus.SOLD);
+        // productRepository.save(product);
+
+        Trade savedTrade = tradeRepository.save(newTrade);
+        return TradeResponseDto.fromEntity(savedTrade);
     }
 
-    /**
-     * 나의 거래 내역 조회 (GET /users/me/trades)
-     */
-    @Transactional(readOnly = true)
-    public List<Trade> getMyTrades(Long buyerId) {
-        User buyer = userRepository.findById(buyerId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    public List<TradeResponseDto> getMyTrades(User user) {
+        Long currentUserId = user.getUserId();
 
-        // (이 기능을 위해 TradeRepository 수정이 필요합니다 -> 아래 "다음 단계" 참고)
-        return tradeRepository.findAllByBuyer(buyer);
+        List<Trade> trades = tradeRepository.findByBuyer_UserIdOrProduct_User_UserId(currentUserId, currentUserId);
+
+        return trades.stream()
+                .map(TradeResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }

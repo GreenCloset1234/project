@@ -1,4 +1,3 @@
-// global/exception/ErrorCode.java
 package com.example.GreenCloset.global.exception;
 
 import lombok.Getter;
@@ -12,6 +11,8 @@ public enum ErrorCode {
     // 400 Bad Request (잘못된 요청)
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "입력 값이 올바르지 않습니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+    // [수정] TradeService에서 사용할 에러 코드 추가
+    CANNOT_TRADE_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "자신이 등록한 상품은 구매할 수 없습니다."),
 
     // 401 Unauthorized (인증 실패)
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
@@ -27,6 +28,6 @@ public enum ErrorCode {
     NICKNAME_DUPLICATION(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     TRADE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 거래가 완료된 상품입니다.");
 
-    private final HttpStatus status;
+    private final HttpStatus status; // (httpStatus -> status로 수정. 사용자님이 올려주신 코드 기준)
     private final String message;
 }

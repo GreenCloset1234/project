@@ -2,44 +2,33 @@ package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.Builder; // [수정] @Builder 추가
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Trades")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder // [수정] Builder 오류 해결
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // [수정] JPA를 위한 기본 생성자
+@AllArgsConstructor // [수정] @Builder를 위한 모든 필드 생성자
 public class Trade {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "trade_id")
     private Long tradeId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", unique = true, nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
-    private User buyer;
+    @JoinColumn(name = "buyer_id")
+    private User buyer; // (구매자)
 
-    @Column(name = "total", nullable = false)
-    @ColumnDefault("0")
-    private Long total; // ERD: BIGINT
+    private Long total; // (거래 금액)
 
-    @CreationTimestamp
-    @Column(name = "completed_at", nullable = false, updatable = false)
-    private LocalDateTime completedAt;
-
-    @Builder
-    public Trade(Product product, User buyer, Long total) {
-        this.product = product;
-        this.buyer = buyer;
-        this.total = (total != null) ? total : 0L;
-    }
+    private LocalDateTime completedAt; // (거래 완료 시간)
 }
