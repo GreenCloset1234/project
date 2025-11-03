@@ -1,4 +1,4 @@
 package com.example.GreenCloset.dto;
 
-public class productCreateRequestDto {
+public class ProductCreateRequestDto {
 }
