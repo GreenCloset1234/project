@@ -48,6 +48,16 @@ public class UserController {
         // (Body 없이 Header에 토큰만 담아 200 OK 응답)
         return new ResponseEntity<>(headers, HttpStatus.OK);
     }
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★ 500 오류 해결을 위한 핵심 코드 ★
+    // ★ 이 코드를 UserController 클래스 맨 아래에 추가하세요. ★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
+        // Service에서 "비밀번호가 일치하지 않습니다" 등의 예외가 터지면
+        // 500 오류 대신, 400 Bad Request와 함께 예외 메시지를 Body에 담아 보냅니다.
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    }
 
     /**
      * 내 정보 조회 (수정: @AuthenticationPrincipal 사용)

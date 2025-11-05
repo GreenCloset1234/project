@@ -1,12 +1,12 @@
 package com.example.GreenCloset.config;
 
-// (필요한 import 구문들)
 import com.example.GreenCloset.jwt.JwtAuthenticationFilter;
 import com.example.GreenCloset.jwt.JwtUtil;
-import com.example.GreenCloset.repository.UserRepository; // (필터가 UserRepository를 사용하므로 import)
+import com.example.GreenCloset.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // [추가] HttpMethod 임포트
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,58 +16,88 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration; // [추가] CORS 임포트
+import org.springframework.web.cors.CorsConfigurationSource; // [추가] CORS 임포트
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // [추가] CORS 임포트
+
+import java.util.Arrays; // [추가] Arrays 임포트
+import java.util.List; // [추가] List 임포트
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // [수정] JwtUtil과 UserRepository 주입
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    // 1. PasswordEncoder Bean 등록
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * 2. AuthenticationManager Bean 등록 (가장 중요!)
-     * - UserService가 'bean을 찾을 수 없습니다' 오류가 뜬 이유
-     * - 이 Bean을 등록해야 @RequiredArgsConstructor로 주입받을 수 있습니다.
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
-    // 3. JwtAuthenticationFilter Bean 등록
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        // [수정] filter가 UserRepository를 사용하도록 전달
         return new JwtAuthenticationFilter(jwtUtil, userRepository);
     }
 
-    // 4. SecurityFilterChain Bean 등록 (메인 설정)
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★ 1. CORS 설정 Bean (이미지 업로드 오류 해결) ★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 프론트엔드 개발 서버 주소 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+
+        // 모든 HTTP 메서드 (GET, POST, PUT, DELETE, OPTIONS 등) 허용
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        // 모든 HTTP 헤더 허용
+        configuration.setAllowedHeaders(List.of("*"));
+
+        // 자격 증명(쿠키, 인증 헤더) 허용
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // 모든 경로("/**")에 이 CORS 설정을 적용
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // CSRF 비활성화
-                .formLogin(formLogin -> formLogin.disable()) // 폼 로그인 비활성화
-                .httpBasic(httpBasic -> httpBasic.disable()) // HTTP Basic 비활성화
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안 함
+                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                // ★ 2. CORS 설정을 SecurityFilterChain에 적용 ★
+                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 엔드포인트별 권한 설정
+                .csrf(csrf -> csrf.disable())
+                .formLogin(formLogin -> formLogin.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/users/signup").permitAll() // 회원가입
-                        .requestMatchers("/api/v1/users/login").permitAll()  // 로그인
-                        .requestMatchers("/api/v1/products/**").permitAll() // 상품 조회
-                        .requestMatchers("/ws/**").permitAll() // WebSocket
-                        .anyRequest().authenticated() // 나머지 모든 요청은 인증 필요
+                        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                        // ★ 3. OPTIONS "사전 요청"은 무조건 허용 ★
+                        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers("/api/v1/users/signup").permitAll()
+                        .requestMatchers("/api/v1/users/login").permitAll()
+                        .requestMatchers("/api/v1/products/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .anyRequest().authenticated()
                 );
 
-        // [수정] Bean으로 등록한 jwtAuthenticationFilter()를 사용
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

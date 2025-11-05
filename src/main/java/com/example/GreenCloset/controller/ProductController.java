@@ -5,7 +5,7 @@ import com.example.GreenCloset.dto.ProductCreateRequestDto;
 import com.example.GreenCloset.dto.ProductDetailResponseDto;
 import com.example.GreenCloset.dto.ProductListResponseDto;
 import com.example.GreenCloset.service.ProductService;
-// (TODO: import com.example.GreenCloset.service.S3Service;)
+import com.example.GreenCloset.service.S3Service;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +24,7 @@ public class ProductController {
 
     private final ProductService productService;
     // (TODO: private final S3Service s3Service;)
+    private final S3Service s3Service;
 
     /**
      * 1. 상품 등록 (인증 필요)
@@ -37,9 +38,12 @@ public class ProductController {
 
         // (TODO: S3Service를 사용하여 이미지 업로드)
         // String imageUrl = s3Service.uploadFile(image);
-        String tempImageUrl = "s3://temp-image-url.jpg"; // (임시 URL)
+        String s3Key = s3Service.uploadFile(image);
+        //String tempImageUrl = "s3://temp-image-url.jpg"; // (임시 URL)
 
-        ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, tempImageUrl);
+        //ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, tempImageUrl);
+        ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, s3Key);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
