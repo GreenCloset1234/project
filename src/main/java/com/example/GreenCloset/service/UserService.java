@@ -6,7 +6,6 @@ import com.example.GreenCloset.dto.LoginRequestDto;
 import com.example.GreenCloset.dto.UserResponseDto;
 import com.example.GreenCloset.dto.UserSignupRequestDto;
 import com.example.GreenCloset.dto.PasswordChangeRequestDto;
-// [수정] import 구문 추가
 import com.example.GreenCloset.global.exception.CustomException;
 import com.example.GreenCloset.global.exception.ErrorCode;
 import com.example.GreenCloset.repository.UserRepository;
@@ -52,7 +51,7 @@ public class UserService {
      * 로그인
      * (이 메서드는 UserController에서 loginAndGetUser로 호출되거나 login이 User를 반환해야 함)
      */
-    @Transactional
+    /*@Transactional
     public User loginAndGetUser(LoginRequestDto requestDto) { // (메서드 이름을 loginAndGetUser로 가정)
         try {
             authenticationManager.authenticate(
@@ -68,6 +67,23 @@ public class UserService {
 
         return userRepository.findByEmail(requestDto.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }*/
+    /**
+     * 로그인 (수정: User 객체 반환)
+     */
+    @Transactional(readOnly = true)
+    public User loginAndGetUser(LoginRequestDto requestDto) { // [수정] 메서드 이름, 반환 타입
+        // 1. 이메일로 사용자 조회
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
+
+        // 2. 비밀번호 일치 여부 확인
+        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 3. 인증된 User 객체 반환
+        return user;
     }
 
     /**
