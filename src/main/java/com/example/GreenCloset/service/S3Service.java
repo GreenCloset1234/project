@@ -1,8 +1,8 @@
 package com.example.GreenCloset.service;
 
-// 1. [수정] import 구문이 완전히 변경되었습니다. (AWS SDK v2/v3용)
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,47 +16,79 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3Service {
 
-    // 1. application.properties에서 S3 설정을 자동으로 주입받음
     private final S3Client s3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
+    @Value("${cloud.aws.s3.base-url}")
+    private String s3BaseUrl;
+
     /**
-     * S3에 파일을 업로드하고, 저장된 파일의 키(Key)를 반환합니다.
-     * (전체 URL이 아닌, 파일 키를 반환해야 ProductService 로직과 맞습니다)
+     * S3에 [상품] 파일을 업로드하고, 저장된 '완전한 URL'을 반환합니다.
      */
     public String uploadFile(MultipartFile multipartFile) throws IOException {
+        String fileKey = "products/" + createUniqueFileKey(multipartFile.getOriginalFilename());
+        uploadToS3(multipartFile, fileKey);
+        return getFullFileUrl(fileKey);
+    }
 
-        // 2. 파일 원본 이름에서 확장자 추출
-        String originalFilename = multipartFile.getOriginalFilename();
-        String fileExtension = getFileExtension(originalFilename);
+    /**
+     * S3에 [프로필] 파일을 업로드하고, 저장된 '완전한 URL'을 반환합니다.
+     */
+    public String uploadProfileImage(MultipartFile multipartFile) throws IOException {
+        String fileKey = "profiles/" + createUniqueFileKey(multipartFile.getOriginalFilename());
+        uploadToS3(multipartFile, fileKey);
+        return getFullFileUrl(fileKey);
+    }
 
-        // 3. 중복 방지를 위한 UUID 파일 이름 생성 (경로 포함)
-        String fileKey = "products/" + UUID.randomUUID().toString() + fileExtension;
+    /**
+     * S3에서 파일을 삭제합니다. (완전한 URL을 받아서 키를 추출)
+     */
+    public void deleteFile(String fullFileUrl) {
+        if (fullFileUrl == null || fullFileUrl.isEmpty() || !fullFileUrl.startsWith(s3BaseUrl)) {
+            return;
+        }
+        String fileKey = fullFileUrl.substring(s3BaseUrl.length());
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileKey)
+                .build();
+        s3Client.deleteObject(deleteObjectRequest);
+    }
 
-        // 4. [수정] 업로드 방식 변경 (PutObjectRequest 객체 사용)
+    /**
+     * [수정] 'private' -> 'public'으로 변경
+     * 파일 '키(Key)'를 '완전한 HTTPS URL'로 변환합니다. (UserService가 호출)
+     */
+    public String getFullFileUrl(String fileKey) {
+        if (fileKey == null || fileKey.isEmpty()) {
+            return null;
+        }
+        return s3BaseUrl + fileKey;
+    }
+
+
+    // --- 헬퍼 메서드 (이하 동일) ---
+
+    private void uploadToS3(MultipartFile multipartFile, String fileKey) throws IOException {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(fileKey)
                 .contentType(multipartFile.getContentType())
                 .contentLength(multipartFile.getSize())
                 .build();
-
-        // 5. [수정] S3에 파일 업로드 (InputStream과 RequestBody 사용)
         s3Client.putObject(putObjectRequest,
                 RequestBody.fromInputStream(multipartFile.getInputStream(), multipartFile.getSize()));
-
-        // 6. ProductService에서 사용할 파일 키(Key) 반환
-        return fileKey;
     }
 
-    /**
-     * 파일 이름에서 확장자를 추출하는 헬퍼 메서드
-     */
+    private String createUniqueFileKey(String originalFilename) {
+        String fileExtension = getFileExtension(originalFilename);
+        return UUID.randomUUID().toString() + fileExtension;
+    }
+
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
-            // (혹시 모를 예외 처리: 확장자가 없으면 .jpg 강제)
             return ".jpg";
         }
         return filename.substring(filename.lastIndexOf("."));

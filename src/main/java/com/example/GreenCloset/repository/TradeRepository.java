@@ -13,4 +13,5 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
      */
     List<Trade> findByBuyer_UserIdOrProduct_User_UserId(Long buyerId, Long sellerId);
 
+    long countByBuyer_UserIdOrProduct_User_UserId(Long buyerId, Long sellerId);
 }

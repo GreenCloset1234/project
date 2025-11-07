@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Builder // [추가] UserService의 signup 메서드에서 .builder()를 사용하기 위해
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA는 기본 생성자가 필요
-@AllArgsConstructor // [추가] @Builder가 모든 필드 생성자를 사용하기 위해
-@Table(name = "users") // (DB 테이블명을 'users'로 명시)
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Table(name = "users")
 public class User {
 
     @Id
@@ -32,15 +32,21 @@ public class User {
 
     private String introduction;
 
-    // (TODO: Enum 타입의 UserRole(권한) 필드 추가 권장)
-    // @Enumerated(EnumType.STRING)
-    // private UserRole role;
+    // [수정] "마일리지" 필드 제거
+    // @Column(columnDefinition = "BIGINT default 0")
+    // private Long mileage;
 
     /**
-     * [추가] UserService의 changePassword에서 호출하는 메서드
-     * (엔티티의 데이터를 변경할 때는 @Setter 대신 명확한 메서드 이름을 사용)
+     * 비밀번호 변경 메서드
      */
     public void updatePassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    /**
+     * 프로필 이미지 변경 메서드
+     */
+    public void updateProfileImage(String profileImageKey) {
+        this.profileImageUrl = profileImageKey;
     }
 }
