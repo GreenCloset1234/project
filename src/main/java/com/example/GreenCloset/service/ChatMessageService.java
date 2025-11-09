@@ -21,11 +21,9 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
-    // [수정] S3Service 주입 제거 (더 이상 필요 없음)
-    // private final S3Service s3Service;
 
     /**
-     * 메시지 저장 (수정: S3Service 호출 로직 제거)
+     * 메시지 저장 (Service가 DTO 변환까지 책임짐)
      */
     @Transactional
     public ChatMessageResponseDto saveMessage(Long roomId, Long senderId, String content) {
@@ -43,12 +41,12 @@ public class ChatMessageService {
 
         ChatMessage savedMessage = chatMessageRepository.save(newMessage);
 
-        // [수정] DTO의 fromEntity 시그니처 변경 (S3Service 호출 삭제)
+        // DTO로 변환하여 컨트롤러에 반환
         return ChatMessageResponseDto.fromEntity(savedMessage);
     }
 
     /**
-     * 특정 채팅방의 메시지 내역 조회 (수정: S3Service 호출 로직 제거)
+     * 특정 채팅방의 메시지 내역 조회
      */
     public List<ChatMessageResponseDto> getMessagesByRoomId(Long roomId, User user) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
@@ -59,14 +57,12 @@ public class ChatMessageService {
         Long buyerId = chatRoom.getBuyer().getUserId();
         Long sellerId = chatRoom.getProduct().getUser().getUserId();
         if (!currentUserId.equals(buyerId) && !currentUserId.equals(sellerId)) {
-            // (ErrorCode.CHATROOM_NOT_AUTHORIZED 등)
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE); // (적절한 ErrorCode로 변경 권장)
         }
 
         List<ChatMessage> messages = chatMessageRepository.findByChatRoom_RoomIdOrderBySentAtAsc(roomId);
 
         return messages.stream()
-                // [수정] DTO의 fromEntity 시그니처 변경 (S3Service 호출 삭제)
                 .map(ChatMessageResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }

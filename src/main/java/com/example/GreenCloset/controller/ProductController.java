@@ -19,30 +19,27 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/products")
+@RequestMapping("/api/v1") // [수정] Base URL 변경 (신규 API 경로 통합)
 public class ProductController {
 
     private final ProductService productService;
-    // (TODO: private final S3Service s3Service;)
     private final S3Service s3Service;
 
     /**
      * 1. 상품 등록 (인증 필요)
      */
-    @PostMapping(consumes = {"multipart/form-data"})
+    @PostMapping(path = "/products", consumes = {"multipart/form-data"})
     public ResponseEntity<ProductDetailResponseDto> createProduct(
             @Valid @RequestPart("dto") ProductCreateRequestDto requestDto,
             @RequestPart("image") MultipartFile image,
-            @AuthenticationPrincipal User user // (판매자 정보)
+            @AuthenticationPrincipal User user
     ) throws IOException {
 
-        // (TODO: S3Service를 사용하여 이미지 업로드)
-        // String imageUrl = s3Service.uploadFile(image);
-        String s3Key = s3Service.uploadFile(image);
-        //String tempImageUrl = "s3://temp-image-url.jpg"; // (임시 URL)
+        // (참고: s3Service.uploadFile은 '완전한 URL'을 반환)
+        String imageUrl = s3Service.uploadFile(image);
 
-        //ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, tempImageUrl);
-        ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, s3Key);
+        // (ProductService는 '완전한 URL'을 받아 DB에 저장)
+        ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, imageUrl);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
@@ -50,7 +47,7 @@ public class ProductController {
     /**
      * 2. 전체 상품 목록 조회
      */
-    @GetMapping
+    @GetMapping("/products")
     public ResponseEntity<List<ProductListResponseDto>> getAllProducts() {
         List<ProductListResponseDto> responseDtoList = productService.getAllProducts();
         return ResponseEntity.ok(responseDtoList);
@@ -59,12 +56,33 @@ public class ProductController {
     /**
      * 3. 상품 상세 조회
      */
-    @GetMapping("/{productId}")
+    @GetMapping("/products/{productId}")
     public ResponseEntity<ProductDetailResponseDto> getProductDetail(
             @PathVariable Long productId
     ) {
-        // [수정] getProductById -> getProductDetail
         ProductDetailResponseDto responseDto = productService.getProductDetail(productId);
         return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * [신규] 특정 사용자가 작성한 상품 목록 조회 (인증 불필요)
+     */
+    @GetMapping("/users/{userId}/products")
+    public ResponseEntity<List<ProductListResponseDto>> getProductsByUserId(
+            @PathVariable Long userId
+    ) {
+        List<ProductListResponseDto> responseDtoList = productService.getProductsByUserId(userId);
+        return ResponseEntity.ok(responseDtoList);
+    }
+
+    /**
+     * [신규] 내가 작성한 상품 목록 조회 (인증 필요)
+     */
+    @GetMapping("/users/me/products")
+    public ResponseEntity<List<ProductListResponseDto>> getMyProducts(
+            @AuthenticationPrincipal User user
+    ) {
+        List<ProductListResponseDto> responseDtoList = productService.getProductsByUserId(user.getUserId());
+        return ResponseEntity.ok(responseDtoList);
     }
 }

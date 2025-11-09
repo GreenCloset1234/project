@@ -19,12 +19,12 @@ public class ChatMessageResponseDto {
     private Long roomId;
     private Long senderId;
     private String senderName;
-    private String senderProfileImageUrl; // (S3 풀 URL)
+    private String senderProfileImageUrl;
     private String content;
     private LocalDateTime sentAt;
 
     /**
-     * [수정] fromEntity 시그니처 변경 (senderFullProfileUrl 파라미터 제거)
+     * 엔티티를 DTO로 변환하는 정적 팩토리 메서드
      */
     public static ChatMessageResponseDto fromEntity(ChatMessage message) {
         if (message == null) {
@@ -36,13 +36,12 @@ public class ChatMessageResponseDto {
 
         Long senderId = null;
         String senderName = "알 수 없는 사용자";
-        String senderProfileImageUrl = null; // (기본 프로필 URL)
+        String senderProfileImageUrl = null; // (기본 프로필 URL 등)
 
         if (sender != null) {
             senderId = sender.getUserId();
             senderName = sender.getNickname();
-            // [수정] 엔티티에서 '완전한 URL'을 직접 가져옴
-            senderProfileImageUrl = sender.getProfileImageUrl();
+            senderProfileImageUrl = sender.getProfileImageUrl(); // 엔티티의 URL 필드
         }
 
         Long roomId = (room != null) ? room.getRoomId() : null;
@@ -52,7 +51,7 @@ public class ChatMessageResponseDto {
                 .roomId(roomId)
                 .senderId(senderId)
                 .senderName(senderName)
-                .senderProfileImageUrl(senderProfileImageUrl) // [수정]
+                .senderProfileImageUrl(senderProfileImageUrl)
                 .content(message.getContent())
                 .sentAt(message.getSentAt())
                 .build();
