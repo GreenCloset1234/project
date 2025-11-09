@@ -11,10 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // [추가]
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException; // [추가]
-import java.util.Map; // [추가]
+import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    // ... (signup, login, handleIllegalArgumentException, getMyInfo, changePassword 메서드는 동일) ...
+    // ... (signup, login, handleIllegalArgumentException은 기존과 동일) ...
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(@Valid @RequestBody UserSignupRequestDto requestDto) {
         UserResponseDto responseDto = userService.signup(requestDto);
@@ -57,7 +57,6 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponseDto> getMyInfo(@AuthenticationPrincipal User user) {
-        // (이 코드가 작동하려면 UserInfoResponseDto.java 수정이 필요)
         UserInfoResponseDto responseDto = userService.getUserInfo(user);
         return ResponseEntity.ok(responseDto);
     }
@@ -71,19 +70,37 @@ public class UserController {
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
 
-    /**
-     * [신규] 프로필 이미지 변경 (인증 필요)
-     * (multipart/form-data 형식으로 image 파일만 받음)
-     */
     @PutMapping(path = "/me/image", consumes = {"multipart/form-data"})
     public ResponseEntity<Map<String, String>> updateProfileImage(
             @RequestPart("image") MultipartFile image,
             @AuthenticationPrincipal User user
     ) throws IOException {
-
         String newImageUrl = userService.updateProfileImage(user, image);
-
-        // 프론트엔드에 새 이미지 URL을 JSON 형식으로 반환
         return ResponseEntity.ok(Map.of("profileImageUrl", newImageUrl));
+    }
+
+
+    /**
+     * [신규] 닉네임 / 한줄소개 수정 (인증 필요)
+     */
+    @PutMapping("/me")
+    public ResponseEntity<UserInfoResponseDto> updateMyInfo(
+            @Valid @RequestBody UserUpdateRequestDto requestDto,
+            @AuthenticationPrincipal User user
+    ) {
+        // (참고: 닉네임 중복 검사가 필요하다면 UserService에서 로직 추가)
+        UserInfoResponseDto responseDto = userService.updateMyInfo(user, requestDto);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * [신규] 다른 사용자 프로필 조회 (인증 불필요)
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserInfoResponseDto> getUserInfo(
+            @PathVariable Long userId
+    ) {
+        UserInfoResponseDto responseDto = userService.getUserInfoById(userId);
+        return ResponseEntity.ok(responseDto);
     }
 }
