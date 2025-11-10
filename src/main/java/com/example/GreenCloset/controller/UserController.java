@@ -50,11 +50,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-    }
-
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponseDto> getMyInfo(@AuthenticationPrincipal User user) {
         UserInfoResponseDto responseDto = userService.getUserInfo(user);
