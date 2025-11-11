@@ -1,12 +1,11 @@
 package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.ChatMessage;
-import com.example.GreenCloset.domain.ChatRoom;
-import com.example.GreenCloset.domain.User;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonFormat; // [추가]
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -15,45 +14,27 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ChatMessageResponseDto {
+
     private Long messageId;
-    private Long roomId;
     private Long senderId;
-    private String senderName;
-    private String senderProfileImageUrl;
+    private String senderNickname;
     private String content;
+
+    // [수정] Invalid Date 오류 해결
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime sentAt;
 
     /**
-     * 엔티티를 DTO로 변환하는 정적 팩토리 메서드
+     * [수정] fromEntity 인수를 1개(ChatMessage)만 받도록 변경
+     * (이것이 500 서버 오류의 원인이었습니다)
      */
-    public static ChatMessageResponseDto fromEntity(ChatMessage message) {
-        if (message == null) {
-            return null;
-        }
-
-        User sender = message.getSender();
-        ChatRoom room = message.getChatRoom();
-
-        Long senderId = null;
-        String senderName = "알 수 없는 사용자";
-        String senderProfileImageUrl = null; // (기본 프로필 URL 등)
-
-        if (sender != null) {
-            senderId = sender.getUserId();
-            senderName = sender.getNickname();
-            senderProfileImageUrl = sender.getProfileImageUrl(); // 엔티티의 URL 필드
-        }
-
-        Long roomId = (room != null) ? room.getRoomId() : null;
-
+    public static ChatMessageResponseDto fromEntity(ChatMessage chatMessage) {
         return ChatMessageResponseDto.builder()
-                .messageId(message.getMessageId())
-                .roomId(roomId)
-                .senderId(senderId)
-                .senderName(senderName)
-                .senderProfileImageUrl(senderProfileImageUrl)
-                .content(message.getContent())
-                .sentAt(message.getSentAt())
+                .messageId(chatMessage.getMessageId())
+                .senderId(chatMessage.getSender().getUserId())
+                .senderNickname(chatMessage.getSender().getNickname())
+                .content(chatMessage.getContent())
+                .sentAt(chatMessage.getSentAt())
                 .build();
     }
 }
