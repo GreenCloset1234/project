@@ -1,7 +1,8 @@
 package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.ChatMessage;
-import com.fasterxml.jackson.annotation.JsonFormat; // [추가]
+import com.example.GreenCloset.domain.User; // [추가]
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,22 +18,29 @@ public class ChatMessageResponseDto {
 
     private Long messageId;
     private Long senderId;
-    private String senderNickname;
+
+    // [가이드 2. 로직 3]
+    private String senderNickname; // (v2 명세서의 'senderName' 역할)
+
+    // [가이드 2. 로직 3] (이 필드가 누락되었습니다)
+    private String senderProfileImageUrl;
+
     private String content;
 
-    // [수정] Invalid Date 오류 해결
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime sentAt;
 
     /**
-     * [수정] fromEntity 인수를 1개(ChatMessage)만 받도록 변경
-     * (이것이 500 서버 오류의 원인이었습니다)
+     * [수정] 가이드에 맞게 senderProfileImageUrl 추가
      */
     public static ChatMessageResponseDto fromEntity(ChatMessage chatMessage) {
+        User sender = chatMessage.getSender(); // 보낸 사람(User) 정보
+
         return ChatMessageResponseDto.builder()
                 .messageId(chatMessage.getMessageId())
-                .senderId(chatMessage.getSender().getUserId())
-                .senderNickname(chatMessage.getSender().getNickname())
+                .senderId(sender.getUserId())
+                .senderNickname(sender.getNickname()) // [가이드 2. 로직 3]
+                .senderProfileImageUrl(sender.getProfileImageUrl()) // [가이드 2. 로직 3]
                 .content(chatMessage.getContent())
                 .sentAt(chatMessage.getSentAt())
                 .build();

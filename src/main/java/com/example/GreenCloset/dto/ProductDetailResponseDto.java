@@ -42,12 +42,12 @@ public class ProductDetailResponseDto {
         User user = product.getUser(); // 판매자(User) 정보
         String nickname = "알 수 없음";
         Long userId = null;
-        String sellerProfileImg = null; // [신규]
+        String sellerProfileImg = null;
 
         if (user != null) {
             nickname = user.getNickname();
             userId = user.getUserId();
-            sellerProfileImg = user.getProfileImageUrl(); // [신규] User의 프로필 URL 가져오기
+            sellerProfileImg = user.getProfileImageUrl(); //  User의 프로필 URL 가져오기
         }
 
         return ProductDetailResponseDto.builder()
@@ -59,7 +59,7 @@ public class ProductDetailResponseDto {
                 .userId(userId)
                 .status(product.getStatus())
                 .createdAt(product.getCreatedAt())
-                .sellerProfileImg(sellerProfileImg) // [신규] 응답에 포함
+                .sellerProfileImg(sellerProfileImg) //  응답에 포함
                 .build();
     }
 }
