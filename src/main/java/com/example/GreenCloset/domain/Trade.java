@@ -1,35 +1,39 @@
 package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Builder // [추가] TradeService의 .builder()를 위해
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
-@AllArgsConstructor // [추가] @Builder를 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class) // (completed_at 자동 생성을 위해)
+@Builder
+@AllArgsConstructor
 public class Trade {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long tradeId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    // (ERD 기반)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", unique = true) // 하나의 상품은 하나의 거래만
     private Product product;
 
+    // (ERD 기반 - 구매자)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id")
-    private User buyer; // (구매자)
+    private User buyer;
 
-    private Long total; // (거래 금액)
-
-    // (이 필드는 TradeService에서 .now()로 직접 설정하므로 BaseEntity 미사용)
+    @CreatedDate // (거래 완료 시점)
+    @Column(updatable = false)
     private LocalDateTime completedAt;
+
+    // (ERD 기반 - 마일리지 적립용)
+    @Column(nullable = false)
+    private Long total;
 }

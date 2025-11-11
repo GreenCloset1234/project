@@ -1,9 +1,7 @@
 package com.example.GreenCloset.controller;
 
 import com.example.GreenCloset.domain.User;
-import com.example.GreenCloset.dto.ProductCreateRequestDto;
-import com.example.GreenCloset.dto.ProductDetailResponseDto;
-import com.example.GreenCloset.dto.ProductListResponseDto;
+import com.example.GreenCloset.dto.*; // [수정]
 import com.example.GreenCloset.service.ProductService;
 import com.example.GreenCloset.service.S3Service;
 import jakarta.validation.Valid;
@@ -19,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1") // [수정] Base URL 변경 (신규 API 경로 통합)
+@RequestMapping("/api/v1")
 public class ProductController {
 
     private final ProductService productService;
@@ -35,12 +33,8 @@ public class ProductController {
             @AuthenticationPrincipal User user
     ) throws IOException {
 
-        // (참고: s3Service.uploadFile은 '완전한 URL'을 반환)
         String imageUrl = s3Service.uploadFile(image);
-
-        // (ProductService는 '완전한 URL'을 받아 DB에 저장)
         ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, imageUrl);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
@@ -64,10 +58,11 @@ public class ProductController {
         return ResponseEntity.ok(responseDto);
     }
 
+
     /**
-     * [신규] 특정 사용자가 작성한 상품 목록 조회 (인증 불필요)
+     * [v2 API] 특정 사용자가 작성한 상품 목록 조회 (프로필 보기)
      */
-    @GetMapping("/users/{userId}/products")
+    @GetMapping("/products/users/{userId}/products")
     public ResponseEntity<List<ProductListResponseDto>> getProductsByUserId(
             @PathVariable Long userId
     ) {
@@ -76,13 +71,27 @@ public class ProductController {
     }
 
     /**
-     * [신규] 내가 작성한 상품 목록 조회 (인증 필요)
+     * [v2 API] 내가 작성한 상품 목록 조회 (마이페이지)
      */
-    @GetMapping("/users/me/products")
+    @GetMapping("/products/users/me/products")
     public ResponseEntity<List<ProductListResponseDto>> getMyProducts(
             @AuthenticationPrincipal User user
     ) {
         List<ProductListResponseDto> responseDtoList = productService.getProductsByUserId(user.getUserId());
         return ResponseEntity.ok(responseDtoList);
+    }
+
+    /**
+     * [신규] 상품 거래 상태 변경 (예약 중 / 교환 가능)
+     * (상품 등록자만 가능)
+     */
+    @PatchMapping("/products/{productId}/status")
+    public ResponseEntity<Void> updateProductStatus(
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductStatusUpdateRequestDto requestDto,
+            @AuthenticationPrincipal User user
+    ) {
+        productService.updateProductStatus(productId, requestDto.getStatus(), user);
+        return ResponseEntity.ok().build();
     }
 }

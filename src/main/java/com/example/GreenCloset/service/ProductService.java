@@ -1,6 +1,7 @@
 package com.example.GreenCloset.service;
 
 import com.example.GreenCloset.domain.Product;
+import com.example.GreenCloset.domain.ProductStatus;
 import com.example.GreenCloset.domain.User;
 import com.example.GreenCloset.dto.*;
 import com.example.GreenCloset.global.exception.CustomException;
@@ -19,56 +20,66 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    // [수정] S3Service 주입 삭제 (ProductController에서만 사용)
-    // private final S3Service s3Service;
 
-    /**
-     * 상품 등록 (DB에 '완전한 URL' 저장)
-     */
     @Transactional
     public ProductDetailResponseDto createProduct(ProductCreateRequestDto requestDto, User user, String imageUrl) {
 
         Product newProduct = Product.builder()
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
-                .productImageUrl(imageUrl) // (Controller가 전달한 '완전한 URL'을 DB에 저장)
+                .productImageUrl(imageUrl)
                 .user(user)
+                .status(ProductStatus.AVAILABLE) // 생성 시 기본 상태 'AVAILABLE'
                 .build();
 
         Product savedProduct = productRepository.save(newProduct);
 
+        // [수정] fromEntity 호출 인수 1개로 변경
         return ProductDetailResponseDto.fromEntity(savedProduct);
     }
 
-    /**
-     * 전체 상품 목록 조회 (DB에 저장된 '완전한 URL' 사용)
-     */
     public List<ProductListResponseDto> getAllProducts() {
-        return productRepository.findAll() // (TODO: 추후 Paging, Sort 적용)
+        return productRepository.findAll()
                 .stream()
-                .map(ProductListResponseDto::fromEntity) // (DTO가 엔티티의 Full URL을 사용)
+                // [수정] fromEntity 호출 인수 1개로 변경 (메서드 레퍼런스)
+                .map(ProductListResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 상품 상세 조회 (DB에 저장된 '완전한 URL' 사용)
-     */
     public ProductDetailResponseDto getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        return ProductDetailResponseDto.fromEntity(product); // (DTO가 엔티티의 Full URL을 사용)
+        // [수정] fromEntity 호출 인수 1개로 변경
+        return ProductDetailResponseDto.fromEntity(product);
+    }
+
+    public List<ProductListResponseDto> getProductsByUserId(Long userId) {
+        List<Product> products = productRepository.findByUser_UserId(userId);
+        return products.stream()
+                // [수정] fromEntity 호출 인수 1개로 변경 (메서드 레퍼런스)
+                .map(ProductListResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     /**
-     * [신규] 특정 사용자 ID로 상품 목록 조회
+     * 상품 거래 상태 변경 (예약 중 등)
      */
-    public List<ProductListResponseDto> getProductsByUserId(Long userId) {
-        // (ProductRepository에 findByUser_UserId 메서드 추가 필요)
-        List<Product> products = productRepository.findByUser_UserId(userId);
+    @Transactional
+    public void updateProductStatus(Long productId, ProductStatus newStatus, User user) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        return products.stream()
-                .map(ProductListResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        // [권한 체크] 상품 등록자만 상태를 변경할 수 있음
+        if (!product.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE); // (권한 없음 ErrorCode로 수정)
+        }
+
+        // '교환 완료' 상태는 TradeService에서만 변경 가능하도록
+        if (newStatus == ProductStatus.TRADED || product.getStatus() == ProductStatus.TRADED) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "거래 완료 상태는 변경할 수 없습니다.");
+        }
+
+        product.updateStatus(newStatus);
     }
 }

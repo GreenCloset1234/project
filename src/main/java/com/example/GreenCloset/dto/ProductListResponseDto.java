@@ -1,6 +1,7 @@
 package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.Product;
+import com.example.GreenCloset.domain.ProductStatus;
 import com.example.GreenCloset.domain.User;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,11 +16,12 @@ public class ProductListResponseDto {
 
     private Long productId;
     private String title;
-    private String productImageUrl; // (S3 풀 URL)
+    private String productImageUrl;
     private String nickname;
+    private ProductStatus status;
 
     /**
-     * [수정] fromEntity 시그니처 변경 (fullImageUrl 파라미터 제거)
+     * [수정] fromEntity 시그니처 변경 (인수 1개)
      */
     public static ProductListResponseDto fromEntity(Product product) {
         if (product == null) {
@@ -32,9 +34,9 @@ public class ProductListResponseDto {
         return ProductListResponseDto.builder()
                 .productId(product.getProductId())
                 .title(product.getTitle())
-                // [수정] 엔티티에서 '완전한 URL'을 직접 가져옴
                 .productImageUrl(product.getProductImageUrl())
                 .nickname(nickname)
+                .status(product.getStatus())
                 .build();
     }
 }

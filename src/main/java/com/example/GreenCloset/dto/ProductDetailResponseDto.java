@@ -1,11 +1,12 @@
 package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.Product;
+import com.example.GreenCloset.domain.ProductStatus;
 import com.example.GreenCloset.domain.User;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -16,49 +17,40 @@ import java.time.LocalDateTime;
 public class ProductDetailResponseDto {
 
     private Long productId;
-    private Long userId; // 판매자 ID
-    private String nickname; // 판매자 닉네임
     private String title;
     private String content;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String productImageUrl; // 상품 이미지 (Full URL)
+    private String productImageUrl;
+    private String nickname;
+    private Long userId;
+    private ProductStatus status;
+    private LocalDateTime createdAt; // (BaseEntity 상속 필요)
 
     /**
-     * [수정] 판매자 프로필 이미지 URL 필드 추가
-     */
-    private String sellerProfileImageUrl; // 판매자 프로필 (Full URL)
-
-
-    /**
-     * Product 엔티티를 DTO로 변환하는 정적 팩토리 메서드
+     * [수정] fromEntity 시그니처 변경 (인수 1개)
      */
     public static ProductDetailResponseDto fromEntity(Product product) {
         if (product == null) {
             return null;
         }
 
-        Long userId = null;
-        String nickname = null;
-        String sellerProfileImageUrl = null; // [수정]
-
         User user = product.getUser();
+        String nickname = "알 수 없음";
+        Long userId = null;
+
         if (user != null) {
-            userId = user.getUserId();
             nickname = user.getNickname();
-            sellerProfileImageUrl = user.getProfileImageUrl(); // [수정] (DB에 Full URL이 저장되어 있음)
+            userId = user.getUserId();
         }
 
         return ProductDetailResponseDto.builder()
                 .productId(product.getProductId())
                 .title(product.getTitle())
                 .content(product.getContent())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
                 .productImageUrl(product.getProductImageUrl())
-                .userId(userId)
                 .nickname(nickname)
-                .sellerProfileImageUrl(sellerProfileImageUrl) // [수정]
+                .userId(userId)
+                .status(product.getStatus())
+                .createdAt(product.getCreatedAt()) // (BaseEntity 상속 필요)
                 .build();
     }
 }

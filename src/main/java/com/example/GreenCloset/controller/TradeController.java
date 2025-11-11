@@ -1,17 +1,14 @@
 package com.example.GreenCloset.controller;
 
 import com.example.GreenCloset.domain.User;
-import com.example.GreenCloset.dto.TradeRequestDto;
-import com.example.GreenCloset.dto.TradeResponseDto;
 import com.example.GreenCloset.service.TradeService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,26 +18,14 @@ public class TradeController {
     private final TradeService tradeService;
 
     /**
-     * 1. 거래 생성 (구매 요청)
+     * [신규] 거래 완료 API (구매자가 호출)
      */
-    @PostMapping
-    public ResponseEntity<TradeResponseDto> createTrade(
-            @Valid @RequestBody TradeRequestDto requestDto,
-            @AuthenticationPrincipal User user // (구매자 정보)
+    @PostMapping("/{productId}/complete")
+    public ResponseEntity<Void> completeTrade(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal User user // (구매자)
     ) {
-        TradeResponseDto responseDto = tradeService.createTrade(requestDto, user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-    }
-
-    /**
-     * 2. 내 거래 내역 조회
-     */
-    @GetMapping("/me")
-    public ResponseEntity<List<TradeResponseDto>> getMyTrades(
-            @AuthenticationPrincipal User user // [수정] @AuthenticationPrincipal 사용
-    ) {
-        // [수정] Long ID 대신 User 객체를 서비스로 전달 (오류 수정)
-        List<TradeResponseDto> responseDtoList = tradeService.getMyTrades(user);
-        return ResponseEntity.ok(responseDtoList);
+        tradeService.completeTrade(productId, user);
+        return ResponseEntity.ok().build();
     }
 }

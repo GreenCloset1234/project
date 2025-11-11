@@ -1,36 +1,39 @@
 package com.example.GreenCloset.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+// [수정] BaseEntity 상속 추가
 @Entity
 @Getter
-@Builder // [추가] ProductService의 .builder()를 위해
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
-@AllArgsConstructor // [추가] @Builder를 위해
-public class Product extends BaseEntity { // [수정] createdAt, updatedAt 상속
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long productId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(nullable = false)
     private String productImageUrl;
 
-    // (TODO: Enum 타입의 ProductStatus(상품 상태) 필드 추가 권장)
-    // @Enumerated(EnumType.STRING)
-    // private ProductStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id") // (판매자)
-    private User user;
+    // (엔티티가 직접 비즈니스 로직을 갖도록)
+    public void updateStatus(ProductStatus newStatus) {
+        this.status = newStatus;
+    }
 }

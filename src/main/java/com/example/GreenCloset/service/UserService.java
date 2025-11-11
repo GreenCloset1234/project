@@ -73,7 +73,9 @@ public class UserService {
     public UserInfoResponseDto updateMyInfo(User user, UserUpdateRequestDto requestDto) {
         // (참고: 닉네임 중복 검사가 필요하다면 여기에 로직 추가)
 
+        // [오류 지점] 이 메서드를 User 엔티티에 추가해야 함
         user.updateProfile(requestDto.getNickname(), requestDto.getIntroduction());
+
         User savedUser = userRepository.save(user);
         return fetchUserInfo(savedUser);
     }
