@@ -1,7 +1,7 @@
 package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.ChatMessage;
-import com.example.GreenCloset.domain.User; // [추가]
+import com.example.GreenCloset.domain.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,10 +19,10 @@ public class ChatMessageResponseDto {
     private Long messageId;
     private Long senderId;
 
-    // [가이드 2. 로직 3]
+    // [가이드 2-3]
     private String senderNickname; // (v2 명세서의 'senderName' 역할)
 
-    // [가이드 2. 로직 3] (이 필드가 누락되었습니다)
+    // [가이드 2-3]
     private String senderProfileImageUrl;
 
     private String content;
@@ -31,7 +31,8 @@ public class ChatMessageResponseDto {
     private LocalDateTime sentAt;
 
     /**
-     * [수정] 가이드에 맞게 senderProfileImageUrl 추가
+     * [문제 2 해결]
+     * fromEntity가 가이드의 요구사항을 모두 포함하도록 수정
      */
     public static ChatMessageResponseDto fromEntity(ChatMessage chatMessage) {
         User sender = chatMessage.getSender(); // 보낸 사람(User) 정보
@@ -39,8 +40,8 @@ public class ChatMessageResponseDto {
         return ChatMessageResponseDto.builder()
                 .messageId(chatMessage.getMessageId())
                 .senderId(sender.getUserId())
-                .senderNickname(sender.getNickname()) // [가이드 2. 로직 3]
-                .senderProfileImageUrl(sender.getProfileImageUrl()) // [가이드 2. 로직 3]
+                .senderNickname(sender.getNickname()) // [가이드 2-3]
+                .senderProfileImageUrl(sender.getProfileImageUrl()) // [가이드 2-3]
                 .content(chatMessage.getContent())
                 .sentAt(chatMessage.getSentAt())
                 .build();

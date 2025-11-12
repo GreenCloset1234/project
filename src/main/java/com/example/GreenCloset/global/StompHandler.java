@@ -51,7 +51,7 @@ public class StompHandler implements ChannelInterceptor {
                 log.info("STOMP user connected: {}", user.getEmail());
 
             } else {
-                log.warn("STOMP connection refused: Invalid JWT token");
+                log.warn("STOMP connection refused: Invalid JWT token");//ddd
                 throw new SecurityException("Invalid JWT token");
             }
         }
