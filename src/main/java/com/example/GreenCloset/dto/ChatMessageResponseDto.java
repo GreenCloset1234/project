@@ -37,13 +37,26 @@ public class ChatMessageResponseDto {
     public static ChatMessageResponseDto fromEntity(ChatMessage chatMessage) {
         User sender = chatMessage.getSender(); // 보낸 사람(User) 정보
 
+        // [!!] Null-Safe 처리 [!!]
+        // sender가 null일 경우를 대비하여 기본값을 설정합니다.
+        Long senderId = null;
+        String senderNickname = "알 수 없음"; // 또는 "탈퇴한 사용자"
+        String senderProfileImageUrl = null; // 기본 프로필 이미지 URL을 넣어도 좋습니다.
+
+        // sender가 null이 아닐 때만 실제 값을 할당합니다.
+        if (sender != null) {
+            senderId = sender.getUserId();
+            senderNickname = sender.getNickname();
+            senderProfileImageUrl = sender.getProfileImageUrl();
+        }
+
         return ChatMessageResponseDto.builder()
                 .messageId(chatMessage.getMessageId())
-                .senderId(sender.getUserId())
-                .senderNickname(sender.getNickname()) // [가이드 2-3]
-                .senderProfileImageUrl(sender.getProfileImageUrl()) // [가이드 2-3]
+                .senderId(senderId)           // Null-Safe 변수 사용
+                .senderNickname(senderNickname) // Null-Safe 변수 사용
+                .senderProfileImageUrl(senderProfileImageUrl) // Null-Safe 변수 사용
                 .content(chatMessage.getContent())
-                .sentAt(chatMessage.getSentAt())
+                .sentAt(chatMessage.getSentAt()) // (ChatMessage의 getSentAt()은 정상)
                 .build();
     }
 }
