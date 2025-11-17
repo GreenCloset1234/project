@@ -1,8 +1,8 @@
 package com.example.GreenCloset.domain;
 
+import com.example.GreenCloset.dto.ChatMessageDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,26 +11,34 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Builder // [추가] ChatMessageService의 .builder()를 위해
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // [추가] JPA 기본 생성자
-@AllArgsConstructor // [추가] @Builder를 위해
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long messageId;
+    private Long id;
 
+    // ChatRoom 엔티티를 직접 참조 (FK: room_id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @JoinColumn(name = "room_id", nullable = false)
     private ChatRoom chatRoom;
 
+    // User 엔티티를 직접 참조 (FK: sender_id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    @Column(nullable = false)
-    private String content;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content; // 메시지 내용
 
-    // (이 필드는 ChatMessageService에서 .now()로 직접 설정하므로 BaseEntity 미사용)
-    private LocalDateTime sentAt;
+    @Column
+    public LocalDateTime sentAt; // BaseEntity의 createdAt 대신 직접 관리
+
+    @Builder
+    public ChatMessage(ChatRoom chatRoom, User sender, String content, LocalDateTime sentAt) {
+        this.chatRoom = chatRoom;
+        this.sender = sender;
+        this.content = content;
+        this.sentAt = sentAt;
+    }
 }

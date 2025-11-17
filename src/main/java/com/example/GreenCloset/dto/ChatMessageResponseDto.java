@@ -51,12 +51,13 @@ public class ChatMessageResponseDto {
         }
 
         return ChatMessageResponseDto.builder()
-                .messageId(chatMessage.getMessageId())
-                .senderId(senderId)           // Null-Safe 변수 사용
-                .senderNickname(senderNickname) // Null-Safe 변수 사용
-                .senderProfileImageUrl(senderProfileImageUrl) // Null-Safe 변수 사용
+                // .messageId(chatMessage.getMessageId()) // [기존]
+                .messageId(chatMessage.getId())           // [수정] (엔티티의 필드명은 id)
+                .senderId(senderId)
+                .senderNickname(senderNickname)
+                .senderProfileImageUrl(senderProfileImageUrl)
                 .content(chatMessage.getContent())
-                .sentAt(chatMessage.getSentAt()) // (ChatMessage의 getSentAt()은 정상)
+                .sentAt(chatMessage.getSentAt())
                 .build();
     }
 }

@@ -76,9 +76,14 @@ public class ChatRoomService {
             User partner = myUserId.equals(seller.getUserId()) ? buyer : seller;
 
             // 4. 마지막 메시지 찾기
-            String lastMessage = chatMessageRepository.findFirstByChatRoom_RoomIdOrderBySentAtDesc(room.getRoomId())
-                    .map(ChatMessage::getContent) // (메시지가 있으면 content 반환)
-                    .orElse("대화 내역이 없습니다."); // (메시지가 없으면 기본값)
+            // [수정 코드]
+            // 1. 방금 추가한 메서드를 호출하여 Optional<ChatMessage>을 받습니다.
+            Optional<ChatMessage> lastMessageOpt = chatMessageRepository.findFirstByChatRoom_RoomIdOrderBySentAtDesc(room.getRoomId());
+
+            // 2. Optional에서 content를 추출하고, 메시지가 없으면 기본값을 설정합니다.
+            String lastMessage = lastMessageOpt
+                    .map(ChatMessage::getContent) // 메시지가 있으면 content를 가져옴
+                    .orElse("아직 메시지가 없습니다."); // 메시지가 없으면 이 문자열을 사용
 
             // 5. 최종 DTO 생성 (ChatRoomListResponseDto의 fromEntity 호출)
             return ChatRoomListResponseDto.fromEntity(room, partner, lastMessage);
