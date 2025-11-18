@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List; // [추가]
+import java.util.List;
 import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
@@ -14,10 +14,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByProduct_ProductIdAndBuyer_UserId(Long productId, Long buyerId);
 
     /**
-     * [신규] 내가 참여하고 있는 모든 채팅방 조회 (내가 구매자 또는 판매자)
-     * (Product의 User(판매자) ID 또는 buyer ID가 나 자신인 경우)
+     * [수정됨] N+1 문제 해결을 위해 Fetch Join 쿼리로 변경
+     * (ChatRoom, Product, Product의 User(판매자), ChatRoom의 User(구매자)를 한 번에 로딩)
      */
     @Query("SELECT cr FROM ChatRoom cr " +
-            "WHERE cr.buyer.userId = :userId OR cr.product.user.userId = :userId")
+            "JOIN FETCH cr.product p " +
+            "JOIN FETCH p.user " + // 판매자
+            "JOIN FETCH cr.buyer " + // 구매자
+            "WHERE p.user.userId = :userId OR cr.buyer.userId = :userId")
     List<ChatRoom> findChatRoomsByUserId(@Param("userId") Long userId);
 }

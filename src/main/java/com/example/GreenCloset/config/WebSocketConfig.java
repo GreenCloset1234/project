@@ -1,6 +1,6 @@
 package com.example.GreenCloset.config; // 패키지 경로는 프로젝트에 맞게 확인하세요.
 
-import com.example.GreenCloset.global.StompHandler; // StompHandler 위치
+import com.example.GreenCloset.jwt.StompHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -20,6 +20,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 메시지 브로커 설정
 
+        // 1. [수정] 클라이언트에게 메시지를 보낼 때 (Subscribe)
+        //    API 명세서(5.2)  및 프론트엔드와 일치하도록 "/sub"만 사용
+        registry.enableSimpleBroker("/sub");
+
+        // 2. [수정] 클라이언트에서 서버로 메시지를 보낼 때 (Publish)
+        //    API 명세서(5.1)  및 프론트엔드와 일치하도록 "/pub" 사용
+        registry.setApplicationDestinationPrefixes("/pub");
+        /*// 메시지 브로커 설정
+
         // 1. 클라이언트에게 메시지를 보낼 때 (Subscribe)
         //    /topic (1:N, 채팅방 등)
         //    /queue (1:1, 개인 알림 등)
@@ -27,7 +36,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // 2. 클라이언트에서 서버로 메시지를 보낼 때 (Publish)
         //    /app 으로 시작하는 주소로 메시지를 보내면, @MessageMapping이 붙은 메서드로 라우팅됩니다.
-        registry.setApplicationDestinationPrefixes("/app");
+        registry.setApplicationDestinationPrefixes("/app");*/
     }
 
     @Override

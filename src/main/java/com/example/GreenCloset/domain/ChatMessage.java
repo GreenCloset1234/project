@@ -16,6 +16,7 @@ public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "message_id")
     private Long id;
 
     // ChatRoom 엔티티를 직접 참조 (FK: room_id)
@@ -31,7 +32,7 @@ public class ChatMessage {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content; // 메시지 내용
 
-    @Column
+    @Column(name = "sent_at")
     public LocalDateTime sentAt; // BaseEntity의 createdAt 대신 직접 관리
 
     @Builder
