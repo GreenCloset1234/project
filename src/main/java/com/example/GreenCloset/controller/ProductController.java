@@ -1,10 +1,13 @@
 package com.example.GreenCloset.controller;
 
+import com.example.GreenCloset.domain.ProductStatus;
 import com.example.GreenCloset.domain.User;
 import com.example.GreenCloset.dto.*; // [수정]
 import com.example.GreenCloset.service.ProductService;
 import com.example.GreenCloset.service.S3Service;
 import jakarta.validation.Valid;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +35,6 @@ public class ProductController {
             @RequestPart("image") MultipartFile image,
             @AuthenticationPrincipal User user
     ) throws IOException {
-
         String imageUrl = s3Service.uploadFile(image);
         ProductDetailResponseDto responseDto = productService.createProduct(requestDto, user, imageUrl);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);

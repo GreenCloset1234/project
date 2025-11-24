@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ProductStatusUpdateRequestDto {
-
     // "AVAILABLE", "RESERVED", "TRADED" 중 하나
     @NotNull(message = "상태를 입력해주세요.")
     private ProductStatus status;

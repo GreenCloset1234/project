@@ -1,17 +1,11 @@
 package com.example.GreenCloset.domain;
 
+import lombok.Getter;
+
+@Getter
 public enum ProductStatus {
-    AVAILABLE("교환 가능"), // 0
-    RESERVED("예약 중"),   // 1
-    TRADED("교환 완료"); // 2
-
-    private final String description;
-
-    ProductStatus(String description) {
-        this.description = description;
-    }
-
-    public String getDescription() {
-        return description;
-    }
+    AVAILABLE,  // 판매중
+    RESERVED,   // 예약중
+    SOLD_OUT,   // 거래완료 (판매완료)
+    TRADED      // 교환완료 (필요 시)
 }

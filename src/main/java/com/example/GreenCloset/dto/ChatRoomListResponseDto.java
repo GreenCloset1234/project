@@ -2,10 +2,13 @@ package com.example.GreenCloset.dto;
 
 import com.example.GreenCloset.domain.ChatRoom;
 import com.example.GreenCloset.domain.User;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
+@AllArgsConstructor
 public class ChatRoomListResponseDto {
 
     private Long roomId;
@@ -13,26 +16,20 @@ public class ChatRoomListResponseDto {
     private String productImageUrl;
     private String lastMessage;
 
-    // 상대방 정보
-    private Long partnerId;
-    private String partnerNickname;
-    private String partnerProfileImg;
+    // [수정] 프론트엔드 편의를 위해 상대방 정보를 객체로 묶음
+    private PartnerInfo partner;
 
+    @Getter
     @Builder
-    public ChatRoomListResponseDto(Long roomId, Long productId, String productImageUrl,
-                                   String lastMessage, Long partnerId,
-                                   String partnerNickname, String partnerProfileImg) {
-        this.roomId = roomId;
-        this.productId = productId;
-        this.productImageUrl = productImageUrl;
-        this.lastMessage = lastMessage;
-        this.partnerId = partnerId;
-        this.partnerNickname = partnerNickname;
-        this.partnerProfileImg = partnerProfileImg;
+    @AllArgsConstructor
+    public static class PartnerInfo {
+        private Long id;
+        private String nickname;
+        private String profileImageUrl;
     }
 
     /**
-     * Entity를 DTO로 변환 (상대방 정보와 마지막 메시지를 주입받음)
+     * Entity -> DTO 변환
      */
     public static ChatRoomListResponseDto fromEntity(ChatRoom chatRoom, User partner, String lastMessage) {
         return ChatRoomListResponseDto.builder()
@@ -40,9 +37,11 @@ public class ChatRoomListResponseDto {
                 .productId(chatRoom.getProduct().getProductId())
                 .productImageUrl(chatRoom.getProduct().getProductImageUrl())
                 .lastMessage(lastMessage)
-                .partnerId(partner.getUserId())
-                .partnerNickname(partner.getNickname())
-                .partnerProfileImg(partner.getProfileImageUrl())
+                .partner(PartnerInfo.builder()
+                        .id(partner.getUserId())
+                        .nickname(partner.getNickname())
+                        .profileImageUrl(partner.getProfileImageUrl())
+                        .build())
                 .build();
     }
 }
