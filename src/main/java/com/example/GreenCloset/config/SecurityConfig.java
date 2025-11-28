@@ -71,7 +71,9 @@ public class SecurityConfig {
 
         // 모든 출처(도메인) 허용
         // (보안을 강화하려면 "https://greencloset1234.store" 처럼 특정 도메인만 넣으세요)
-        configuration.addAllowedOriginPattern("https://greencloset1234.store");
+        configuration.addAllowedOriginPattern("http://localhost:5173"); // 테스트 주소
+        configuration.addAllowedOrigin("http://localhost:5174");
+        configuration.addAllowedOriginPattern("https://greencloset1234.store"); // 배포 주소
 
         // 모든 HTTP 메서드 허용 (GET, POST, PUT, DELETE 등)
         configuration.addAllowedMethod("*");
