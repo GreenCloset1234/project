@@ -25,13 +25,13 @@ import java.util.Objects;
 public class StompHandler implements ChannelInterceptor {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository; // DB 조회를 위해 주입
+    private final UserRepository userRepository;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
-        // CONNECT 요청 처리 (기존 로직 보강)
+        // 1. [CONNECT] 웹소켓 연결 요청 시 -> 토큰 검증 및 세션 저장
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authToken = accessor.getFirstNativeHeader("Authorization");
             if (authToken != null && authToken.startsWith("Bearer ")) {
@@ -40,44 +40,48 @@ public class StompHandler implements ChannelInterceptor {
 
             if (authToken != null && jwtUtil.validateToken(authToken)) {
                 String email = jwtUtil.getEmailFromToken(authToken);
-                // email로 User 객체를 DB에서 조회
+
+                // DB에서 사용자 조회
                 User user = userRepository.findByEmail(email)
                         .orElseThrow(() -> new SecurityException("User not found from token"));
 
-                // [수정] 'getAuthorities' 오류 해결
-                // Principal을 User 객체로 설정하고, authorities는 null로 전달
+                // 인증 객체 생성 (Principal에 User 엔티티 저장)
                 Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, null);
-                // (2) [중요] STOMP 세션 속성에 인증 정보 저장
+
+                // [중요] 세션 속성(SessionAttributes)에 인증 정보 저장 -> 나중에 SEND 할 때 꺼내 씀
                 Objects.requireNonNull(accessor.getSessionAttributes()).put("userAuth", authentication);
-                // (3) accessor에도 User 설정 (CONNECT 메시지 자체에도 인증 설정)
+
+                // 현재 헤더에도 인증 정보 설정
                 accessor.setUser(authentication);
-                log.info("STOMP user connected: {}", user.getEmail());
+                log.info("STOMP Connected: {}", user.getEmail());
 
             } else {
-                log.warn("STOMP connection refused: Invalid JWT token");
+                log.warn("STOMP Connection Refused: Invalid Token");
+                // 연결 거부
                 throw new SecurityException("Invalid JWT token");
             }
-            // 2. PUBLISH (메시지 전송) 요청 처리
-        } else if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+        }
+        // 2. [SEND / SUBSCRIBE] 메시지 전송 또는 구독 요청 시 -> 세션에서 인증 정보 꺼내기
+        // [수정 완료] 기존에 CONNECT로 잘못 되어있던 부분을 SEND와 SUBSCRIBE로 변경
+        else if (StompCommand.SEND.equals(accessor.getCommand()) || StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
 
-            // (1) [중요] 세션 속성에서 저장된 인증 정보 꺼내기
-            Authentication authentication = (Authentication) Objects.requireNonNull(accessor.getSessionAttributes()).get("userAuth");
+            // 세션에 저장해둔 인증 정보 가져오기
+            Object authObj = Objects.requireNonNull(accessor.getSessionAttributes()).get("userAuth");
 
-            if (authentication != null) {
-                // (2) [핵심] SecurityContextHolder에 인증 정보 설정
-                //      이것으로 @AuthenticationPrincipal이 null이 되는 것을 방지
+            if (authObj instanceof Authentication) {
+                Authentication authentication = (Authentication) authObj;
+
+                // [핵심] SecurityContextHolder에 설정해줘야 Controller에서 @AuthenticationPrincipal로 받을 수 있음
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                // (3) accessor에도 User 설정
+                // Accessor에도 설정
                 accessor.setUser(authentication);
             } else {
-                log.warn("STOMP PUBLISH GUESSED: No authentication found in session");
-                // (인증 정보가 없으면 컨트롤러에서 null이 됨)
-                throw new SecurityException("No authentication in session. Reconnect required.");
+                log.error("STOMP Error: No authentication found in session for command {}", accessor.getCommand());
+                // 필요 시 예외 발생: throw new SecurityException("Unauthorized");
             }
         }
 
-        // (SUBSCRIBE, DISCONNECT 등 나머지 명령은 그냥 통과)
         return message;
     }
 }
